@@ -30,7 +30,7 @@ Built as a test/lab system inspired by the set-and-forget goals of projects like
    ```bash
    sudo nixos-generate-config --root /mnt
    ```
-   This creates `/mnt/etc/nixos/hardware-configuration.nix` with the real disk UUIDs, kernel modules, and firmware for the machine. The repo does not contain one.
+   This creates `/mnt/etc/nixos/hardware-configuration.nix` with the real disk UUIDs, kernel modules, and firmware. `configuration.nix` already imports that file, so the flake will pick it up.
 5. Install:
    ```bash
    sudo nixos-install --flake /etc/nixos#test --root /mnt
@@ -54,6 +54,6 @@ Look under the System menu:
 
 - Password `t` is intentionally weak — this is a test system.
 - Generation 1 is the intended fallback. The menu items check that it exists before switching.
-- There is no `hardware-configuration.nix` in the repo. It is created on the target laptop by `nixos-generate-config`.
+- The repo does not ship a real `hardware-configuration.nix`. You generate it on the laptop with `nixos-generate-config`. The flake imports it, so it is used.
 - A btrfs snapshot-before-update experiment is commented in `nixbook-features.nix`. It is not active and only makes sense if root is btrfs.
 - This is a work-in-progress test configuration, not a finished product.
