@@ -46,6 +46,9 @@
     pulse.enable = true;
   };
 
+  # Allow password changes with passwd (default is true, set explicitly)
+  users.mutableUsers = true;
+
   # Define the admin user account.
   users.users.test = {
     isNormalUser = true;
