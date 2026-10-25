@@ -1,8 +1,8 @@
 { config, pkgs, ... }:
 {
   imports = [
-    # Include the results of the hardware scan.
-    ./hardware-configuration.nix
+    # hardware-configuration.nix is optional when using disko
+    # ./hardware-configuration.nix
     ./nixbook-features.nix
   ];
 
