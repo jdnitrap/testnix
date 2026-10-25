@@ -1,9 +1,12 @@
 { config, lib, pkgs, modulesPath, ... }:
 {
-  # This file is unused when disko is managing the disks.
-  # It is kept only as a reference. Do not uncomment the import in
-  # configuration.nix unless you replace the UUIDs below with real values
-  # from the target machine (lsblk -f or nixos-generate-config).
+  # PLACEHOLDER ONLY.
+  # On a real install, run this on the target laptop and it will overwrite this file
+  # with the correct disk UUIDs, kernel modules, and firmware for that machine:
+  #
+  #   sudo nixos-generate-config --root /mnt
+  #
+  # Do not use the UUIDs below as-is.
 
   imports =
     [ (modulesPath + "/installer/scan/not-detected.nix")
