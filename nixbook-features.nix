@@ -27,6 +27,13 @@ in
     binfmt = true;
   };
 
+  # Protect the default (generation 1) boot generation from GC
+  nix.gc.automatic = true;
+  nix.gc.dates = "weekly";
+  nix.gc.options = "--delete-older-than 30d";
+  # Extra safety: never delete the first generation via a small wrapper or note
+  # (generation 1 stays as long as it is still referenced by the profile)
+
   # Flatpak + Flathub
   services.flatpak.enable = true;
   systemd.services.flatpak-add-flathub = {
@@ -108,21 +115,30 @@ in
     wants = [ "network-online.target" ];
   };
 
-  # Powerwash as a desktop entry + script
+  # Powerwash: switch back to default generation 1, wipe user data, reboot
   environment.systemPackages = with pkgs; [
     (pkgs.writeShellScriptBin "powerwash" ''
       set -eu
-      ${pkgs.zenity}/bin/zenity --question --title="Powerwash" --text="This will wipe all data for the test user and reboot. Continue?" || exit 1
+      ${pkgs.zenity}/bin/zenity --question --title="Powerwash" --text="This will switch back to the default boot generation, wipe all data for the test user, and reboot. Continue?" || exit 1
+
+      # Switch to the protected default generation (generation 1)
+      nix-env -p /nix/var/nix/profiles/system --switch-generation 1 || true
+      # For systemd-boot, also set it as the default entry if possible
+      if command -v bootctl >/dev/null; then
+        bootctl set-default nixos-generation-1.conf || true
+      fi
+
       systemctl stop display-manager || true
       rm -rf /home/test/* /home/test/.[!.]* || true
-      ${notifyScript} "Powerwash" "User data cleared. Rebooting..."
+
+      ${notifyScript} "Powerwash" "Switched to default generation and cleared user data. Rebooting..."
       reboot
     '')
 
     (pkgs.makeDesktopItem {
       name = "powerwash";
       desktopName = "Powerwash";
-      comment = "Wipe user data and reset";
+      comment = "Reset to default generation and wipe user data";
       exec = "pkexec powerwash";
       icon = "edit-clear";
       categories = [ "System" ];
