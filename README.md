@@ -18,5 +18,5 @@ Replace the placeholder UUIDs in `hardware-configuration.nix` with values from `
 - Default Flatpak apps installed once: Chrome, LibreOffice, Zoom
 - AppImage support
 - Bluetooth
-- Weekly auto-upgrade timer with desktop notifications (flake boot + Flatpak update)
+- Weekly auto-upgrade: clones https://github.com/jdnitrap/testnix.git to `/etc/nixos` (or pulls if already present), then runs `nixos-rebuild boot --flake /etc/nixos#test` + Flatpak update, with desktop notifications
 - Powerwash desktop entry + script (confirm via zenity, wipe `/home/test`, reboot)
