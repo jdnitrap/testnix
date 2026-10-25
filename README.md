@@ -53,6 +53,22 @@ Desktop menu entries (under System):
 - Protected generation 1 kept as the automatic fallback (weekly GC of older generations)
 - Firewall enabled, SSH disabled
 
+## Building the live installer ISO
+
+A Calamares-based GNOME live installer is available:
+
+```bash
+nix build .#iso
+```
+
+The resulting ISO is in `result/iso/`. You can also test it in a VM with:
+
+```bash
+nix run .#vm
+```
+
+The live session auto-logs in as `nixos` and includes copies of the testnix configuration files in the store.
+
 ## Building from a clone
 
 ```bash
