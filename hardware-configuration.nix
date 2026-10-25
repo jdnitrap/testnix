@@ -1,5 +1,10 @@
 { config, lib, pkgs, modulesPath, ... }:
 {
+  # This file is unused when disko is managing the disks.
+  # It is kept only as a reference. Do not uncomment the import in
+  # configuration.nix unless you replace the UUIDs below with real values
+  # from the target machine (lsblk -f or nixos-generate-config).
+
   imports =
     [ (modulesPath + "/installer/scan/not-detected.nix")
     ];
@@ -9,16 +14,10 @@
   boot.kernelModules = [ "kvm-intel" ];
   boot.extraModulePackages = [ ];
 
-  # Replace these UUIDs with the output of:
-  #   lsblk -f
-  # or from a real nixos-generate-config run on the target machine.
-  # Example values below are placeholders only.
+  # PLACEHOLDERS ONLY — will not boot if used as-is.
   fileSystems."/" =
     { device = "/dev/disk/by-uuid/11111111-1111-1111-1111-111111111111";
       fsType = "ext4";
-      # For btrfs snapshot support, change to:
-      # fsType = "btrfs";
-      # options = [ "subvol=root" "compress=zstd" ];
     };
 
   fileSystems."/boot" =
