@@ -2,7 +2,7 @@
   description = "Flake-based NixOS test project";
 
   inputs = {
-    nixpkgs.url = "github:NixOS/nixpkgs/nixos-26.05";
+    nixpkgs.url = "github:NixOS/nixpkgs/master";
   };
 
   outputs = { self, nixpkgs }:
