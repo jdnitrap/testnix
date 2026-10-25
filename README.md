@@ -11,13 +11,13 @@ nixos-rebuild switch --flake .#test
 
 Replace the placeholder UUIDs in `hardware-configuration.nix` with values from `nixos-generate-config` or your existing host.
 
-## Features added from nixbook style
+## Features
 
-- zram swap (50%)
-- Flatpak + Flathub remote (added on boot)
-- Default Flatpak apps installed once: Chrome, LibreOffice, Zoom
-- AppImage support
-- Bluetooth
-- Weekly auto-upgrade: clones https://github.com/jdnitrap/testnix.git to `/etc/nixos` (or pulls if already present), then runs `nixos-rebuild boot --flake /etc/nixos#test` + Flatpak update, with desktop notifications
-- Powerwash desktop entry + script: switches back to protected default generation 1 (auto-fallback), wipes `/home/test`, reboots
-- GC keeps generation 1 as the permanent fallback (weekly GC of older generations only)
+- GNOME Wayland + auto-login for user `test`
+- Plymouth boot splash
+- zram, Bluetooth, AppImage, thermald, power management
+- Flatpak + Flathub with defaults: Chrome, LibreOffice, Zoom, Firefox, VLC, File Roller
+- GNOME polish (favorites, reduced telemetry/nags)
+- Weekly auto-upgrade that clones/pulls the repo then rebuilds + Flatpak update
+- Desktop entries: Update Now, List Generations, Powerwash
+- Powerwash resets to protected generation 1 + wipes `/home/test`
