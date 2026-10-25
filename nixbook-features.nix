@@ -96,18 +96,6 @@ in
     };
   };
 
-  environment.systemPackages = with pkgs; [
-    flatpak
-    gnome-software
-    libnotify
-    gawk
-    sudo
-    git
-    vlc
-    file-roller
-    testnixWallpaper
-  ];
-
   # Deploy starter home-directory files to /etc/testnix/config.
   # Powerwash copies these into /home/test after wiping it.
   environment.etc."testnix/config".source = ./config;
@@ -169,8 +157,19 @@ in
     wants = [ "network-online.target" ];
   };
 
-  # Menu entries
+  # All system packages in one list (NixOS does not allow multiple assignments).
   environment.systemPackages = with pkgs; [
+    flatpak
+    gnome-software
+    libnotify
+    gawk
+    sudo
+    git
+    vlc
+    file-roller
+    testnixWallpaper
+
+    # Menu helpers
     (pkgs.writeShellScriptBin "update-now" ''
       set -eu
       ${notifyScript} "Manual update" "Starting update now..."
@@ -222,12 +221,8 @@ in
       icon = "go-previous";
       categories = [ "System" ];
     })
-  ];
 
-  # Powerwash: switch back to generation 1 if it exists, wipe user data,
-  # rebuild the standard home directory from /etc/testnix/config, reboot.
-  # The test account itself is declared in the flake and survives untouched.
-  environment.systemPackages = with pkgs; [
+    # Powerwash
     (pkgs.writeShellScriptBin "powerwash" ''
       set -eu
       ${pkgs.zenity}/bin/zenity --question --title="Powerwash" --text="This will switch back to generation 1 (if it exists), wipe all data for the test user, rebuild the home directory from starter files, and reboot. Continue?" || exit 1
