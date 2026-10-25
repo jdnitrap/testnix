@@ -108,7 +108,10 @@ in
     testnixWallpaper
   ];
 
-  # Weekly auto-upgrade: clone or pull the flake repo, then full update.
+  # Weekly auto-upgrade: sync the flake repo to remote FIRST, then full update.
+  # Order matters: fetch + reset to origin/main guarantees a clean rebase base
+  # before nixos-rebuild runs. Remote is the source of truth; any local drift
+  # is discarded (this is a managed appliance, not a dev machine).
   #
   # Future experiment (not active): btrfs snapshot before update.
   # Only useful if root is btrfs. On ext4 this does nothing useful.
@@ -132,14 +135,24 @@ in
       export PATH=${pkgs.nixos-rebuild}/bin:${pkgs.nix}/bin:${pkgs.git}/bin:${pkgs.coreutils}/bin:$PATH
       ${notifyScript} "System updates" "Checking for updates and installing in the background."
 
+      # Step 1: make /etc/nixos an exact mirror of the remote repo.
       if [ ! -d /etc/nixos/.git ]; then
         rm -rf /etc/nixos
         git clone https://github.com/jdnitrap/testnix.git /etc/nixos
       else
-        git -C /etc/nixos pull --rebase || true
+        # Fetch latest refs, then hard-reset to the remote default branch.
+        # This is the hardened equivalent of pull --rebase: it cannot fail on
+        # divergent history because we do not preserve local commits.
+        git -C /etc/nixos remote set-url origin https://github.com/jdnitrap/testnix.git
+        git -C /etc/nixos fetch --prune origin
+        git -C /etc/nixos checkout -B main origin/main
+        git -C /etc/nixos reset --hard origin/main
       fi
 
+      # Step 2: rebuild from the freshly synced tree.
       nixos-rebuild boot --flake /etc/nixos#test || true
+
+      # Step 3: Flatpak updates.
       flatpak update --noninteractive --assumeyes || true
 
       ${notifyScript} "Updates complete" "Reboot when convenient to apply system updates."
