@@ -35,7 +35,6 @@ in
   boot.plymouth.theme = "testnix";
   boot.plymouth.themePackages = [ testnixPlymouth ];
   boot.consoleLogLevel = 0;
-  boot.initrd.verbose = false;
   boot.kernelParams = [
     "quiet"
     "splash"
