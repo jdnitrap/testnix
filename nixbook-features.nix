@@ -14,6 +14,8 @@ let
         ${pkgs.libnotify}/bin/notify-send "$title" "$body" || true
     done
   '';
+
+  testnixPlymouth = import ./plymouth-theme.nix { inherit pkgs; };
 in
 {
   # Durability / set-and-forget basics
@@ -27,8 +29,10 @@ in
     binfmt = true;
   };
 
-  # Boot splash
+  # Boot splash — custom testnix theme
   boot.plymouth.enable = true;
+  boot.plymouth.theme = "testnix";
+  boot.plymouth.themePackages = [ testnixPlymouth ];
   boot.consoleLogLevel = 0;
   boot.initrd.verbose = false;
   boot.kernelParams = [
