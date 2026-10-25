@@ -26,11 +26,11 @@ Built as a test/lab system inspired by the set-and-forget goals of projects like
    ```bash
    sudo git clone https://github.com/jdnitrap/testnix.git /etc/nixos
    ```
-4. Generate the real hardware config for *this* laptop (overwrites the placeholder):
+4. Generate the hardware config for *this* laptop:
    ```bash
    sudo nixos-generate-config --root /mnt
    ```
-   This writes the correct disk UUIDs, kernel modules, and firmware into `/mnt/etc/nixos/hardware-configuration.nix`.
+   This creates `/mnt/etc/nixos/hardware-configuration.nix` with the real disk UUIDs, kernel modules, and firmware for the machine. The repo does not contain one.
 5. Install:
    ```bash
    sudo nixos-install --flake /etc/nixos#test --root /mnt
@@ -54,6 +54,6 @@ Look under the System menu:
 
 - Password `t` is intentionally weak — this is a test system.
 - Generation 1 is the intended fallback. The menu items check that it exists before switching.
-- `hardware-configuration.nix` in the repo is a placeholder. `nixos-generate-config` on the target laptop replaces it with the real hardware for that machine.
+- There is no `hardware-configuration.nix` in the repo. It is created on the target laptop by `nixos-generate-config`.
 - A btrfs snapshot-before-update experiment is commented in `nixbook-features.nix`. It is not active and only makes sense if root is btrfs.
 - This is a work-in-progress test configuration, not a finished product.
