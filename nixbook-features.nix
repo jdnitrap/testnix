@@ -67,7 +67,8 @@ in
     serviceConfig.Type = "oneshot";
   };
 
-  # Install more default Flatpak apps once
+  # Install default Flatpak apps once
+  # Sentinel is a stamp file so uninstalling one app does not re-trigger everything.
   systemd.services.install-default-flatpaks = {
     wantedBy = [ "multi-user.target" ];
     after = [ "flatpak-add-flathub.service" "network-online.target" ];
@@ -75,7 +76,8 @@ in
     path = [ pkgs.flatpak ];
     script = ''
       set -eu
-      if ! flatpak list --app | grep -q org.libreoffice.LibreOffice; then
+      stamp=/var/lib/testnix-flatpaks-installed
+      if [ ! -f "$stamp" ]; then
         ${notifyScript} "Installing apps" "Setting up default applications..."
         flatpak install flathub com.google.Chrome -y || true
         flatpak install flathub org.libreoffice.LibreOffice -y || true
@@ -83,6 +85,7 @@ in
         flatpak install flathub org.mozilla.firefox -y || true
         flatpak install flathub org.videolan.VLC -y || true
         flatpak install flathub org.gnome.FileRoller -y || true
+        touch "$stamp"
         ${notifyScript} "Apps ready" "Default applications have been installed."
       fi
     '';
@@ -102,11 +105,18 @@ in
     git
     vlc
     file-roller
-    btrfs-progs
     testnixWallpaper
   ];
 
-  # Weekly auto-upgrade: clone or pull the flake repo, snapshot if btrfs, then full update
+  # Weekly auto-upgrade: clone or pull the flake repo, then full update.
+  #
+  # Future experiment (not active): btrfs snapshot before update.
+  # Only useful if root is btrfs. On ext4 this does nothing useful.
+  # To try later:
+  #   if findmnt -n -o FSTYPE / | grep -q btrfs; then
+  #     mkdir -p /snapshots
+  #     btrfs subvolume snapshot / /snapshots/pre-update-$(date +%Y%m%d-%H%M%S) || true
+  #   fi
   systemd.timers.auto-upgrade = {
     wantedBy = [ "timers.target" ];
     timerConfig = {
@@ -119,13 +129,8 @@ in
   systemd.services.auto-upgrade = {
     script = ''
       set -eu
-      export PATH=${pkgs.nixos-rebuild}/bin:${pkgs.nix}/bin:${pkgs.git}/bin:${pkgs.coreutils}/bin:${pkgs.btrfs-progs}/bin:$PATH
+      export PATH=${pkgs.nixos-rebuild}/bin:${pkgs.nix}/bin:${pkgs.git}/bin:${pkgs.coreutils}/bin:$PATH
       ${notifyScript} "System updates" "Checking for updates and installing in the background."
-
-      # Snapshot before update if root is btrfs
-      if findmnt -n -o FSTYPE / | grep -q btrfs; then
-        btrfs subvolume snapshot / /snapshots/pre-update-$(date +%Y%m%d-%H%M%S) || true
-      fi
 
       if [ ! -d /etc/nixos/.git ]; then
         rm -rf /etc/nixos
@@ -158,16 +163,20 @@ in
     (pkgs.writeShellScriptBin "list-generations" ''
       nix-env -p /nix/var/nix/profiles/system --list-generations
       echo ""
-      echo "Current default is generation 1 (protected fallback)."
+      echo "Generation 1 is the intended fallback. Use 'Boot Default Generation' to switch to it."
     '')
 
     (pkgs.writeShellScriptBin "boot-default" ''
       set -eu
-      nix-env -p /nix/var/nix/profiles/system --switch-generation 1 || true
+      if ! nix-env -p /nix/var/nix/profiles/system --list-generations | grep -q '^ *1 '; then
+        ${notifyScript} "Recovery" "Generation 1 does not exist. Cannot switch."
+        exit 1
+      fi
+      nix-env -p /nix/var/nix/profiles/system --switch-generation 1
       if command -v bootctl >/dev/null; then
         bootctl set-default nixos-generation-1.conf || true
       fi
-      ${notifyScript} "Recovery" "Switched to default generation 1. Reboot to apply."
+      ${notifyScript} "Recovery" "Switched to generation 1. Reboot to apply."
     '')
 
     (pkgs.makeDesktopItem {
@@ -191,37 +200,39 @@ in
     (pkgs.makeDesktopItem {
       name = "boot-default";
       desktopName = "Boot Default Generation";
-      comment = "Switch back to the protected generation 1";
+      comment = "Switch back to generation 1 if it exists";
       exec = "pkexec boot-default";
       icon = "go-previous";
       categories = [ "System" ];
     })
   ];
 
-  # Powerwash: switch back to default generation 1, wipe user data, reboot
+  # Powerwash: switch back to generation 1 if it exists, wipe user data, reboot
   environment.systemPackages = with pkgs; [
     (pkgs.writeShellScriptBin "powerwash" ''
       set -eu
-      ${pkgs.zenity}/bin/zenity --question --title="Powerwash" --text="This will switch back to the default boot generation, wipe all data for the test user, and reboot. Continue?" || exit 1
+      ${pkgs.zenity}/bin/zenity --question --title="Powerwash" --text="This will switch back to generation 1 (if it exists), wipe all data for the test user, and reboot. Continue?" || exit 1
 
-      # Switch to the protected default generation (generation 1)
-      nix-env -p /nix/var/nix/profiles/system --switch-generation 1 || true
-      # For systemd-boot, also set it as the default entry if possible
-      if command -v bootctl >/dev/null; then
-        bootctl set-default nixos-generation-1.conf || true
+      if nix-env -p /nix/var/nix/profiles/system --list-generations | grep -q '^ *1 '; then
+        nix-env -p /nix/var/nix/profiles/system --switch-generation 1 || true
+        if command -v bootctl >/dev/null; then
+          bootctl set-default nixos-generation-1.conf || true
+        fi
+      else
+        ${notifyScript} "Powerwash" "Generation 1 missing. Wiping user data only."
       fi
 
       systemctl stop display-manager || true
       rm -rf /home/test/* /home/test/.[!.]* || true
 
-      ${notifyScript} "Powerwash" "Switched to default generation and cleared user data. Rebooting..."
+      ${notifyScript} "Powerwash" "Cleared user data. Rebooting..."
       reboot
     '')
 
     (pkgs.makeDesktopItem {
       name = "powerwash";
       desktopName = "Powerwash";
-      comment = "Reset to default generation and wipe user data";
+      comment = "Reset to generation 1 (if present) and wipe user data";
       exec = "pkexec powerwash";
       icon = "edit-clear";
       categories = [ "System" ];
