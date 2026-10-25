@@ -41,3 +41,7 @@ Flake-based NixOS test project. GNOME on Wayland, set-and-forget appliance style
 - No disk encryption.
 - The Monday timer has no fixed time of day.
 - No CI: a broken flake on master is only caught when rebuild runs.
+
+## Future ideas
+
+- Make the starter home config (`config/` directory deployed to `/etc/testnix/config`) a git submodule or separate small repo, so it can be iterated on independently of the main flake without touching the core system config.
