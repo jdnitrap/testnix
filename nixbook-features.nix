@@ -16,6 +16,7 @@ let
   '';
 
   testnixPlymouth = import ./plymouth-theme.nix { inherit pkgs; };
+  testnixWallpaper = import ./wallpaper.nix { inherit pkgs; };
 in
 {
   # Durability / set-and-forget basics
@@ -102,6 +103,7 @@ in
     vlc
     file-roller
     btrfs-progs
+    testnixWallpaper
   ];
 
   # Weekly auto-upgrade: clone or pull the flake repo, snapshot if btrfs, then full update
@@ -242,9 +244,10 @@ in
           ];
         };
         "org/gnome/desktop/background" = {
-          picture-uri = "file:///usr/share/backgrounds/gnome/adwaita-d.jpg";
-          picture-uri-dark = "file:///usr/share/backgrounds/gnome/adwaita-d.jpg";
-          primary-color = "#3a3a3a";
+          picture-uri = "file://${testnixWallpaper}/share/backgrounds/testnix.jpg";
+          picture-uri-dark = "file://${testnixWallpaper}/share/backgrounds/testnix.jpg";
+          picture-options = "zoom";
+          primary-color = "#121212";
         };
         "org/gnome/desktop/privacy" = {
           report-technical-problems = false;
