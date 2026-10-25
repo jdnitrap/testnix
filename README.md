@@ -13,7 +13,8 @@ Built as a test/lab system inspired by the set-and-forget goals of projects like
 - Automatic weekly updates (pulls this repo, rebuilds, updates Flatpaks)
 - Powerwash option to wipe user data and reset to a known-good generation
 - Default apps via Flatpak: Chrome, LibreOffice, Zoom, Firefox, VLC, File Roller
-- Custom Plymouth splash (dark background + “testnix” text), zram, Bluetooth, AppImage support
+- Custom Plymouth splash and matching GNOME wallpaper (dark background, white ring, “testnix” text)
+- zram, Bluetooth, AppImage support
 - Declarative disk layout with [disko](https://github.com/nix-community/disko)
 
 ---
