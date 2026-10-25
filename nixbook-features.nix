@@ -27,12 +27,27 @@ in
     binfmt = true;
   };
 
+  # Boot splash
+  boot.plymouth.enable = true;
+  boot.consoleLogLevel = 0;
+  boot.initrd.verbose = false;
+  boot.kernelParams = [
+    "quiet"
+    "splash"
+    "loglevel=3"
+    "rd.systemd.show_status=false"
+    "rd.udev.log_level=3"
+    "udev.log_level=3"
+  ];
+
+  # Low-resource / Chromebook-ish tweaks
+  services.thermald.enable = true;
+  powerManagement.enable = true;
+
   # Protect the default (generation 1) boot generation from GC
   nix.gc.automatic = true;
   nix.gc.dates = "weekly";
   nix.gc.options = "--delete-older-than 30d";
-  # Extra safety: never delete the first generation via a small wrapper or note
-  # (generation 1 stays as long as it is still referenced by the profile)
 
   # Flatpak + Flathub
   services.flatpak.enable = true;
@@ -47,7 +62,7 @@ in
     serviceConfig.Type = "oneshot";
   };
 
-  # Install a few default Flatpak apps once
+  # Install more default Flatpak apps once
   systemd.services.install-default-flatpaks = {
     wantedBy = [ "multi-user.target" ];
     after = [ "flatpak-add-flathub.service" "network-online.target" ];
@@ -56,10 +71,13 @@ in
     script = ''
       set -eu
       if ! flatpak list --app | grep -q org.libreoffice.LibreOffice; then
-        ${notifyScript} "Installing apps" "Setting up Chrome, LibreOffice, and Zoom..."
+        ${notifyScript} "Installing apps" "Setting up default applications..."
         flatpak install flathub com.google.Chrome -y || true
         flatpak install flathub org.libreoffice.LibreOffice -y || true
         flatpak install flathub us.zoom.Zoom -y || true
+        flatpak install flathub org.mozilla.firefox -y || true
+        flatpak install flathub org.videolan.VLC -y || true
+        flatpak install flathub org.gnome.FileRoller -y || true
         ${notifyScript} "Apps ready" "Default applications have been installed."
       fi
     '';
@@ -77,6 +95,8 @@ in
     gawk
     sudo
     git
+    vlc
+    file-roller
   ];
 
   # Weekly auto-upgrade: clone or pull the flake repo, then full update
@@ -115,6 +135,39 @@ in
     wants = [ "network-online.target" ];
   };
 
+  # Menu entries
+  environment.systemPackages = with pkgs; [
+    (pkgs.writeShellScriptBin "update-now" ''
+      set -eu
+      ${notifyScript} "Manual update" "Starting update now..."
+      systemctl start auto-upgrade.service || true
+    '')
+
+    (pkgs.writeShellScriptBin "list-generations" ''
+      nix-env -p /nix/var/nix/profiles/system --list-generations
+      echo ""
+      echo "Current default is generation 1 (protected fallback)."
+    '')
+
+    (pkgs.makeDesktopItem {
+      name = "update-now";
+      desktopName = "Update Now";
+      comment = "Check for and install updates";
+      exec = "pkexec update-now";
+      icon = "system-software-update";
+      categories = [ "System" ];
+    })
+
+    (pkgs.makeDesktopItem {
+      name = "list-generations";
+      desktopName = "List Generations";
+      comment = "Show available system generations";
+      exec = "gnome-terminal -- list-generations";
+      icon = "document-properties";
+      categories = [ "System" ];
+    })
+  ];
+
   # Powerwash: switch back to default generation 1, wipe user data, reboot
   environment.systemPackages = with pkgs; [
     (pkgs.writeShellScriptBin "powerwash" ''
@@ -143,5 +196,31 @@ in
       icon = "edit-clear";
       categories = [ "System" ];
     })
+  ];
+
+  # GNOME polish: favorites, disable some nags
+  programs.dconf.enable = true;
+  programs.dconf.profiles.user.databases = [
+    {
+      settings = {
+        "org/gnome/shell" = {
+          favorite-apps = [
+            "org.gnome.Nautilus.desktop"
+            "org.mozilla.firefox.desktop"
+            "com.google.Chrome.desktop"
+            "org.gnome.Terminal.desktop"
+            "org.gnome.Settings.desktop"
+            "org.gnome.Software.desktop"
+          ];
+        };
+        "org/gnome/desktop/privacy" = {
+          report-technical-problems = false;
+        };
+        "org/gnome/software" = {
+          download-updates = false;
+          show-ratings = false;
+        };
+      };
+    }
   ];
 }
