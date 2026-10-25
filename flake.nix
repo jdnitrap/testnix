@@ -22,7 +22,10 @@
         ];
       };
 
-      # Calamares-based live installer ISO
+      # Calamares-based live installer ISO.
+      # The ISO itself is stock GNOME + Calamares. The testnix .nix files are
+      # copied into the ISO store so they can be inspected or used manually
+      # after boot. They are not automatically applied by the live session.
       installer = nixpkgs.lib.nixosSystem {
         inherit system;
         modules = [
@@ -36,12 +39,14 @@
             services.displayManager.autoLogin.enable = true;
             services.displayManager.autoLogin.user = "nixos";
 
-            # Include a copy of the testnix config for the installer to use
+            # Copies of the config for reference on the live media
             isoImage.storeContents = [
               ./configuration.nix
               ./nixbook-features.nix
               ./hardware-configuration.nix
               ./disko.nix
+              ./plymouth-theme.nix
+              ./wallpaper.nix
             ];
           }
         ];
