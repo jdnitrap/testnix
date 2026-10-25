@@ -1,8 +1,7 @@
 { config, pkgs, ... }:
 {
   imports = [
-    # hardware-configuration.nix is optional when using disko
-    # ./hardware-configuration.nix
+    ./hardware-configuration.nix
     ./nixbook-features.nix
   ];
 
