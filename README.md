@@ -7,22 +7,17 @@ A flake-based NixOS system aimed at a simple, set-and-forget GNOME experience (i
 - **Channel**: nixpkgs `master`
 - **Repo**: https://github.com/jdnitrap/testnix
 
-## First-boot flow
+## First-boot flow (with disko)
 
 1. Clone the repository to `/etc/nixos`:
    ```bash
    sudo git clone https://github.com/jdnitrap/testnix.git /etc/nixos
    ```
-   (Or let the weekly auto-upgrade service do the clone on first run.)
-2. Edit `hardware-configuration.nix` and replace the placeholder UUIDs with the real values from your machine:
+2. Edit `disko.nix` and set the real disk device (e.g. `/dev/nvme0n1` or `/dev/sda`).
+3. From the installer environment, run disko to partition/format/mount, then install:
    ```bash
-   lsblk -f
-   # or
-   sudo nixos-generate-config
-   ```
-3. Build and switch:
-   ```bash
-   sudo nixos-rebuild switch --flake /etc/nixos#test
+   sudo nix run github:nix-community/disko -- --mode disko /etc/nixos/disko.nix
+   sudo nixos-install --flake /etc/nixos#test --root /mnt
    ```
 4. Reboot. The system will auto-log in as `test`.
 5. Default Flatpak applications install in the background shortly after login.
@@ -39,45 +34,26 @@ Desktop menu entries (under System):
 
 ## Features
 
+- Declarative disk layout via [disko](https://github.com/nix-community/disko) (EFI + labeled root)
 - Plymouth boot splash and quiet boot
 - Auto-login for the `test` user
 - Default Adwaita dark wallpaper and reduced GNOME telemetry / software-center nags
 - zram, Bluetooth, AppImage, thermald, power management
 - Flatpak + Flathub with default apps: Chrome, LibreOffice, Zoom, Firefox, VLC, File Roller
-- Weekly auto-upgrade that:
-  - clones or pulls this repository to `/etc/nixos`
-  - takes a btrfs snapshot of `/` when the root filesystem is btrfs
-  - runs `nixos-rebuild boot --flake /etc/nixos#test`
-  - updates Flatpaks
-  - shows desktop notifications
-- Protected generation 1 kept as the automatic fallback (weekly GC of older generations)
+- Weekly auto-upgrade that clones/pulls the repo, takes a btrfs snapshot if applicable, rebuilds, and updates Flatpaks
+- Protected generation 1 kept as the automatic fallback
 - Firewall enabled, SSH disabled
 
 ## Building the live installer ISO
-
-A Calamares-based GNOME live installer is available:
 
 ```bash
 nix build .#iso
 ```
 
-The resulting ISO is in `result/iso/`. You can also test it in a VM with:
-
-```bash
-nix run .#vm
-```
-
-The live session auto-logs in as `nixos` and includes copies of the testnix configuration files in the store.
-
-## Building from a clone
-
-```bash
-nix flake show
-nixos-rebuild switch --flake .#test
-```
+Test in a VM with `nix run .#vm`.
 
 ## Notes
 
 - The password `t` is intentionally weak for a pure test / lab system.
-- Generation 1 is treated as the permanent safe fallback. The first successful boot after install becomes that generation.
-- Hardware UUIDs in `hardware-configuration.nix` must be updated before the system will boot on real hardware.
+- Generation 1 is treated as the permanent safe fallback.
+- Update the disk path in `disko.nix` before installing on real hardware.
