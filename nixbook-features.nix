@@ -69,9 +69,10 @@ in
     libnotify
     gawk
     sudo
+    git
   ];
 
-  # Weekly auto-upgrade with notifications
+  # Weekly auto-upgrade: clone or pull the flake repo, then full update
   systemd.timers.auto-upgrade = {
     wantedBy = [ "timers.target" ];
     timerConfig = {
@@ -84,12 +85,19 @@ in
   systemd.services.auto-upgrade = {
     script = ''
       set -eu
-      export PATH=${pkgs.nixos-rebuild}/bin:${pkgs.nix}/bin:${pkgs.coreutils}/bin:$PATH
-      ${notifyScript} "System updates" "Updates are installing in the background."
-      if [ -d /etc/nixos ]; then
-        nixos-rebuild boot --flake /etc/nixos#test || true
+      export PATH=${pkgs.nixos-rebuild}/bin:${pkgs.nix}/bin:${pkgs.git}/bin:${pkgs.coreutils}/bin:$PATH
+      ${notifyScript} "System updates" "Checking for updates and installing in the background."
+
+      if [ ! -d /etc/nixos/.git ]; then
+        rm -rf /etc/nixos
+        git clone https://github.com/jdnitrap/testnix.git /etc/nixos
+      else
+        git -C /etc/nixos pull --rebase || true
       fi
+
+      nixos-rebuild boot --flake /etc/nixos#test || true
       flatpak update --noninteractive --assumeyes || true
+
       ${notifyScript} "Updates complete" "Reboot when convenient to apply system updates."
     '';
     serviceConfig = {
