@@ -3,9 +3,11 @@
 
   inputs = {
     nixpkgs.url = "github:NixOS/nixpkgs/master";
+    disko.url = "github:nix-community/disko";
+    disko.inputs.nixpkgs.follows = "nixpkgs";
   };
 
-  outputs = { self, nixpkgs }:
+  outputs = { self, nixpkgs, disko }:
   let
     system = "x86_64-linux";
   in
@@ -14,6 +16,8 @@
       test = nixpkgs.lib.nixosSystem {
         inherit system;
         modules = [
+          disko.nixosModules.disko
+          ./disko.nix
           ./configuration.nix
         ];
       };
@@ -37,6 +41,7 @@
               ./configuration.nix
               ./nixbook-features.nix
               ./hardware-configuration.nix
+              ./disko.nix
             ];
           }
         ];
