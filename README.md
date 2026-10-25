@@ -15,24 +15,27 @@ Built as a test/lab system inspired by the set-and-forget goals of projects like
 - Default apps via Flatpak: Chrome, LibreOffice, Zoom, Firefox, VLC, File Roller
 - Custom Plymouth splash and matching GNOME wallpaper (dark background, white ring, “testnix” text)
 - zram, Bluetooth, AppImage support
-- Declarative disk layout with [disko](https://github.com/nix-community/disko)
 
 ---
 
 ## Install
 
-1. Boot a NixOS installer (or build the live ISO below).
-2. Clone the repo:
+1. Boot a normal NixOS installer ISO.
+2. Partition and format the disk yourself (or use the installer's partitioning tool).
+3. Clone the repo:
    ```bash
    sudo git clone https://github.com/jdnitrap/testnix.git /etc/nixos
    ```
-3. Edit `disko.nix` and set your real disk (replace `/dev/disk/by-id/CHANGE-ME`).
-4. Run:
+4. Generate or edit `hardware-configuration.nix` with the real disk UUIDs from the target machine:
    ```bash
-   sudo nix run github:nix-community/disko -- --mode disko /etc/nixos/disko.nix
+   sudo nixos-generate-config --root /mnt
+   ```
+   Then copy the generated file into the repo, or edit the placeholders by hand.
+5. Install:
+   ```bash
    sudo nixos-install --flake /etc/nixos#test --root /mnt
    ```
-5. Reboot. It will auto-log in as `test`. Flatpak apps install in the background.
+6. Reboot. It will auto-log in as `test`. Flatpak apps install in the background.
 
 ---
 
@@ -47,23 +50,10 @@ Look under the System menu:
 
 ---
 
-## Live installer ISO
-
-```bash
-nix build .#iso
-```
-
-ISO is in `result/iso/`. Test with `nix run .#vm`.
-
-The live ISO is stock GNOME + Calamares. The testnix config files are copied into the ISO for reference; they are not applied automatically.
-
----
-
 ## Notes
 
 - Password `t` is intentionally weak — this is a test system.
 - Generation 1 is the intended fallback. The menu items check that it exists before switching.
-- Set the real disk path in `disko.nix` before installing on real hardware.
-- `hardware-configuration.nix` is unused when disko is active and contains placeholders only.
+- Replace the placeholder UUIDs in `hardware-configuration.nix` before installing on real hardware.
 - A btrfs snapshot-before-update experiment is commented in `nixbook-features.nix`. It is not active and only makes sense if root is btrfs.
 - This is a work-in-progress test configuration, not a finished product.
