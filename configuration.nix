@@ -29,6 +29,10 @@
   services.displayManager.gdm.enable = true;
   services.desktopManager.gnome.enable = true;
 
+  # Auto-login for the test user (appliance style)
+  services.displayManager.autoLogin.enable = true;
+  services.displayManager.autoLogin.user = "test";
+
   # Enable CUPS to print documents.
   services.printing.enable = true;
 
