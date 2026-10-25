@@ -14,6 +14,10 @@
   # Enable networking
   networking.networkmanager.enable = true;
 
+  # Firewall enabled, SSH disabled
+  networking.firewall.enable = true;
+  services.openssh.enable = false;
+
   # Set your time zone.
   time.timeZone = "America/New_York";
 
