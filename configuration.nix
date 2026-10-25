@@ -1,9 +1,8 @@
 { config, pkgs, ... }:
 {
   imports = [
+    ./hardware-configuration.nix
     ./nixbook-features.nix
-    # hardware-configuration.nix is generated on the target laptop by
-    # nixos-generate-config and is not stored in this repo.
   ];
 
   # Bootloader.
