@@ -13,9 +13,10 @@ Replace the placeholder UUIDs in `hardware-configuration.nix` with values from `
 
 ## Features added from nixbook style
 
-- zram swap
-- Flatpak + Flathub remote
+- zram swap (50%)
+- Flatpak + Flathub remote (added on boot)
+- Default Flatpak apps installed once: Chrome, LibreOffice, Zoom
 - AppImage support
 - Bluetooth
-- Weekly auto-upgrade timer (flake boot + Flatpak update)
-- `powerwash` script (confirm + wipe `/home/test` + reboot)
+- Weekly auto-upgrade timer with desktop notifications (flake boot + Flatpak update)
+- Powerwash desktop entry + script (confirm via zenity, wipe `/home/test`, reboot)
