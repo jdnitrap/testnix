@@ -97,9 +97,10 @@ in
     git
     vlc
     file-roller
+    btrfs-progs
   ];
 
-  # Weekly auto-upgrade: clone or pull the flake repo, then full update
+  # Weekly auto-upgrade: clone or pull the flake repo, snapshot if btrfs, then full update
   systemd.timers.auto-upgrade = {
     wantedBy = [ "timers.target" ];
     timerConfig = {
@@ -112,8 +113,13 @@ in
   systemd.services.auto-upgrade = {
     script = ''
       set -eu
-      export PATH=${pkgs.nixos-rebuild}/bin:${pkgs.nix}/bin:${pkgs.git}/bin:${pkgs.coreutils}/bin:$PATH
+      export PATH=${pkgs.nixos-rebuild}/bin:${pkgs.nix}/bin:${pkgs.git}/bin:${pkgs.coreutils}/bin:${pkgs.btrfs-progs}/bin:$PATH
       ${notifyScript} "System updates" "Checking for updates and installing in the background."
+
+      # Snapshot before update if root is btrfs
+      if findmnt -n -o FSTYPE / | grep -q btrfs; then
+        btrfs subvolume snapshot / /snapshots/pre-update-$(date +%Y%m%d-%H%M%S) || true
+      fi
 
       if [ ! -d /etc/nixos/.git ]; then
         rm -rf /etc/nixos
@@ -149,6 +155,15 @@ in
       echo "Current default is generation 1 (protected fallback)."
     '')
 
+    (pkgs.writeShellScriptBin "boot-default" ''
+      set -eu
+      nix-env -p /nix/var/nix/profiles/system --switch-generation 1 || true
+      if command -v bootctl >/dev/null; then
+        bootctl set-default nixos-generation-1.conf || true
+      fi
+      ${notifyScript} "Recovery" "Switched to default generation 1. Reboot to apply."
+    '')
+
     (pkgs.makeDesktopItem {
       name = "update-now";
       desktopName = "Update Now";
@@ -164,6 +179,15 @@ in
       comment = "Show available system generations";
       exec = "gnome-terminal -- list-generations";
       icon = "document-properties";
+      categories = [ "System" ];
+    })
+
+    (pkgs.makeDesktopItem {
+      name = "boot-default";
+      desktopName = "Boot Default Generation";
+      comment = "Switch back to the protected generation 1";
+      exec = "pkexec boot-default";
+      icon = "go-previous";
       categories = [ "System" ];
     })
   ];
@@ -198,7 +222,7 @@ in
     })
   ];
 
-  # GNOME polish: favorites, disable some nags
+  # GNOME polish: favorites, wallpaper, disable nags more aggressively
   programs.dconf.enable = true;
   programs.dconf.profiles.user.databases = [
     {
@@ -213,12 +237,19 @@ in
             "org.gnome.Software.desktop"
           ];
         };
+        "org/gnome/desktop/background" = {
+          picture-uri = "file:///usr/share/backgrounds/gnome/adwaita-d.jpg";
+          picture-uri-dark = "file:///usr/share/backgrounds/gnome/adwaita-d.jpg";
+          primary-color = "#3a3a3a";
+        };
         "org/gnome/desktop/privacy" = {
           report-technical-problems = false;
         };
         "org/gnome/software" = {
           download-updates = false;
           show-ratings = false;
+          allow-updates = false;
+          first-run = false;
         };
       };
     }
