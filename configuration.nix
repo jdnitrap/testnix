@@ -36,13 +36,12 @@
     pulse.enable = true;
   };
 
-  # Define a user account. Don't forget to set a password with ‘passwd’.
-  users.users.nimda = {
+  # Define the admin user account.
+  users.users.test = {
     isNormalUser = true;
-    description = "nimda";
+    description = "test";
     extraGroups = [ "networkmanager" "wheel" ];
-    packages = with pkgs; [
-    ];
+    hashedPassword = "$6$DU.lGQf.QJKZKClB$iAubTwq72192phdKXub5XjuHlW7QHzP.Iz.WqLX1.xTs8bebPK5BjL8RwQw7.QPra5vhaUdjgBElsDT9TEUKM1";
   };
 
   # Allow unfree packages
