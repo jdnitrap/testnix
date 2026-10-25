@@ -1,0 +1,4 @@
+Welcome to your Documents folder.
+
+Starter files live in the repo under config/ and are copied here by
+Powerwash. Add your own defaults the same way.

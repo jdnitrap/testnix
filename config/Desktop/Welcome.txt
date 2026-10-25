@@ -1,0 +1,8 @@
+Welcome to testnix.
+
+This is your starter Desktop. Powerwash rebuilds this home directory
+from the files in /etc/testnix/config, so anything you add here by hand
+will be replaced on the next reset.
+
+Edit the starter files in the repo's config/ directory to change what a
+fresh powerwash looks like.

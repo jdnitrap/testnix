@@ -108,6 +108,10 @@ in
     testnixWallpaper
   ];
 
+  # Deploy starter home-directory files to /etc/testnix/config.
+  # Powerwash copies these into /home/test after wiping it.
+  environment.etc."testnix/config".source = ./config;
+
   # Weekly auto-upgrade: sync the flake repo to remote FIRST, then full update.
   # Order matters: fetch + reset to origin/main guarantees a clean rebase base
   # before nixos-rebuild runs. Remote is the source of truth; any local drift
@@ -220,11 +224,13 @@ in
     })
   ];
 
-  # Powerwash: switch back to generation 1 if it exists, wipe user data, reboot
+  # Powerwash: switch back to generation 1 if it exists, wipe user data,
+  # rebuild the standard home directory from /etc/testnix/config, reboot.
+  # The test account itself is declared in the flake and survives untouched.
   environment.systemPackages = with pkgs; [
     (pkgs.writeShellScriptBin "powerwash" ''
       set -eu
-      ${pkgs.zenity}/bin/zenity --question --title="Powerwash" --text="This will switch back to generation 1 (if it exists), wipe all data for the test user, and reboot. Continue?" || exit 1
+      ${pkgs.zenity}/bin/zenity --question --title="Powerwash" --text="This will switch back to generation 1 (if it exists), wipe all data for the test user, rebuild the home directory from starter files, and reboot. Continue?" || exit 1
 
       if nix-env -p /nix/var/nix/profiles/system --list-generations | grep -q '^ *1 '; then
         nix-env -p /nix/var/nix/profiles/system --switch-generation 1 || true
@@ -238,14 +244,21 @@ in
       systemctl stop display-manager || true
       rm -rf /home/test/* /home/test/.[!.]* || true
 
-      ${notifyScript} "Powerwash" "Cleared user data. Rebooting..."
+      # Rebuild the standard home layout from the repo-deployed starter files.
+      mkdir -p /home/test/{Desktop,Documents,Downloads,Pictures,.local/share}
+      if [ -d /etc/testnix/config ]; then
+        cp -a /etc/testnix/config/. /home/test/ || true
+      fi
+      chown -R test:test /home/test
+
+      ${notifyScript} "Powerwash" "Home directory reset. Rebooting..."
       reboot
     '')
 
     (pkgs.makeDesktopItem {
       name = "powerwash";
       desktopName = "Powerwash";
-      comment = "Reset to generation 1 (if present) and wipe user data";
+      comment = "Reset to generation 1, wipe user data, rebuild home from starters";
       exec = "pkexec powerwash";
       icon = "edit-clear";
       categories = [ "System" ];

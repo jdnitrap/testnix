@@ -1,59 +1,43 @@
 # testnix
 
-**A simple, durable, auto-updating NixOS system with a GNOME desktop — set it up once and stop worrying about it.**
+Flake-based NixOS test project. GNOME on Wayland, set-and-forget appliance style.
 
-Built as a test/lab system inspired by the set-and-forget goals of projects like [nixbook](https://github.com/mkellyxp/nixbook).
+## First-boot flow
 
----
-
-## What you get
-
-- GNOME on Wayland with auto-login
-- User `test` (password `t`)
-- Automatic weekly updates (pulls this repo, rebuilds, updates Flatpaks)
-- Powerwash option to wipe user data and reset to generation 1 if it exists
-- Default apps via Flatpak: Chrome, LibreOffice, Zoom, Firefox, VLC, File Roller
-- Custom Plymouth splash and matching GNOME wallpaper (dark background, white ring, “testnix” text)
-- zram, Bluetooth, AppImage support
-
----
-
-## Install
-
-1. Boot a normal NixOS installer ISO on the target laptop.
-2. Partition and format the disk (or use the installer's partitioning tool).
-3. Clone the repo:
+1. Clone or boot from the Calamares ISO (removed; use a standard NixOS installer).
+2. Partition the disk yourself (no disko anymore).
+3. Run `sudo nixos-generate-config --root /mnt` on the target laptop to create the real `hardware-configuration.nix`.
+4. Copy your flake in, point `hardware-configuration.nix` at the generated file, then:
    ```bash
-   sudo git clone https://github.com/jdnitrap/testnix.git /etc/nixos
+   sudo nixos-install --flake /mnt/etc/nixos#test --root /mnt
    ```
-4. Generate the hardware config for *this* laptop:
-   ```bash
-   sudo nixos-generate-config --root /mnt
-   ```
-   This creates `/mnt/etc/nixos/hardware-configuration.nix` with the real disk UUIDs, kernel modules, and firmware. `configuration.nix` already imports that file, so the flake will pick it up.
-5. Install:
-   ```bash
-   sudo nixos-install --flake /etc/nixos#test --root /mnt
-   ```
-6. Reboot. It will auto-log in as `test`. Flatpak apps install in the background.
+5. Reboot. Auto-login as `test`, GNOME starts, Flatpaks install in the background.
 
----
+## Everyday menu entries (GNOME)
 
-## Everyday use
+- **Update Now** — runs the weekly auto-upgrade immediately
+- **List Generations** — shows system generations; generation 1 is the fallback
+- **Boot Default Generation** — switches to generation 1
+- **Powerwash** — switches to generation 1, wipes `/home/test`, rebuilds the standard home folders (Desktop, Documents, Downloads, Pictures, `.local/share`) from `/etc/testnix/config`, then reboots. The `test` account itself is declared in the flake and is never deleted.
 
-Look under the System menu:
+## Features
 
-- **Update Now** — check for and install updates
-- **List Generations** — see available system versions
-- **Boot Default Generation** — switch to generation 1 if it exists
-- **Powerwash** — wipe `/home/test` and reset to generation 1 if present
-
----
+- Flake on nixpkgs **master**
+- GNOME on Wayland via GDM, auto-login for `test`
+- Firewall on, SSH off
+- NetworkManager, PipeWire, printing
+- zram (50% of RAM), Bluetooth, AppImage support, thermald
+- Flatpak + Flathub, default apps: Chrome, LibreOffice, Zoom, Firefox, VLC, File Roller
+- Weekly auto-upgrade: hard-reset `/etc/nixos` to `origin/main`, `nixos-rebuild boot`, Flatpak update, notifications
+- Custom Plymouth splash (testnix ring theme) + matching GNOME wallpaper
+- GNOME polish: favorites, dark wallpaper, telemetry/software nags reduced
+- `users.mutableUsers = true` so `passwd` works after first boot
+- Starter home files in `config/` deployed to `/etc/testnix/config`
 
 ## Notes
 
-- Password `t` is intentionally weak — this is a test system.
-- Generation 1 is the intended fallback. The menu items check that it exists before switching.
-- The repo does not ship a real `hardware-configuration.nix`. You generate it on the laptop with `nixos-generate-config`. The flake imports it, so it is used.
-- A btrfs snapshot-before-update experiment is commented in `nixbook-features.nix`. It is not active and only makes sense if root is btrfs.
-- This is a work-in-progress test configuration, not a finished product.
+- Password for `test` is `t` — extremely weak, lab only.
+- Generation 1 is the permanent fallback; Powerwash and Boot Default Generation check it exists first.
+- No disk encryption.
+- The Monday timer has no fixed time of day.
+- No CI: a broken flake on master is only caught when rebuild runs.
