@@ -19,6 +19,16 @@ let
   testnixWallpaper = import ./wallpaper.nix { inherit pkgs; };
 in
 {
+  # Powerwash runs from the app grid with no password prompt.
+  # Tight rule: test may run only this one binary, nothing else.
+  security.sudo.extraRules = [{
+    users = [ "test" ];
+    commands = [{
+      command = "${pkgs.powerwash}/bin/powerwash";
+      options = [ "NOPASSWD" ];
+    }];
+  }];
+
   # Durability / set-and-forget basics
   zramSwap.enable = true;
   zramSwap.memoryPercent = 50;
@@ -253,7 +263,7 @@ in
       name = "powerwash";
       desktopName = "Powerwash";
       comment = "Reset to generation 1, wipe user data, rebuild home from starters";
-      exec = "pkexec powerwash";
+      exec = "powerwash";
       icon = "edit-clear";
       categories = [ "System" ];
     })
