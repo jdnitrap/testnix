@@ -41,10 +41,10 @@ The flake imports `./hardware-configuration.nix`. That file is not shipped in th
 
 ## Everyday menu entries (GNOME)
 
-- **Update Now** — runs the weekly auto-upgrade immediately
+- **Update Now** — runs the weekly auto-upgrade immediately (pkexec prompt)
 - **List Generations** — shows system generations; generation 1 is the fallback
-- **Boot Default Generation** — switches to generation 1
-- **Powerwash** — switches to generation 1, wipes `/home/test`, rebuilds the standard home folders from `/etc/testnix/config`, then reboots. The `test` account itself is declared in the flake and is never deleted.
+- **Boot Default Generation** — switches to generation 1 (pkexec prompt)
+- **Powerwash** — switches to generation 1, wipes `/home/test`, rebuilds the standard home folders from `/etc/testnix/config`, then reboots. The `test` account itself is declared in the flake and is never deleted. Launches with **no password prompt** — a `security.sudo.extraRules` entry grants the `test` user NOPASSWD on exactly the powerwash binary, nothing else. Any other user clicking it still gets the polkit dialog.
 
 ## Features
 
@@ -59,6 +59,7 @@ The flake imports `./hardware-configuration.nix`. That file is not shipped in th
 - GNOME polish: favorites, dark wallpaper, telemetry/software nags reduced
 - `users.mutableUsers = true` so `passwd` works after first boot
 - Starter home files in `config/` deployed to `/etc/testnix/config`
+- Powerwash desktop entry in the app grid (System category), no auth friction for `test`
 
 ## Notes
 
@@ -68,7 +69,10 @@ The flake imports `./hardware-configuration.nix`. That file is not shipped in th
 - The Monday timer has no fixed time of day.
 - No CI: a broken flake on master is only caught when rebuild runs.
 - Disko and the Calamares installer ISO were removed. Partition yourself or use the normal NixOS installer.
+- Powerwash's NOPASSWD sudoers rule is scoped to one absolute binary path; tightening it further (e.g., via a wrapper script) is possible if the path churn from nixos-rebuild becomes a problem.
 
 ## Future ideas
 
 - Make the starter home config (`config/` directory deployed to `/etc/testnix/config`) a git submodule or separate small repo, so it can be iterated on independently of the main flake without touching the core system config.
+- btrfs + snapper snapshot tier (see commented experiment in the auto-upgrade service and `snapper.nix`).
+- Firmware-level or ACPI-triggered Powerwash gesture (ChromeOS-style); not available on standard UEFI laptops.
